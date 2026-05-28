@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BẢO BỐI RSA & Diffie-Hellman</title>
+    <meta name="description" content="Công cụ giải nhanh bài tập RSA và Diffie-Hellman từ đề bài">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --white: #ffffff;
+            --bg: #f5f5f7;
+            --card: #ffffff;
+            --input-bg: #f5f5f7;
+            --border: #d2d2d7;
+            --border-light: #e8e8ed;
+            --t1: #1d1d1f;
+            --t2: #6e6e73;
+            --t3: #86868b;
+            --t4: #aeaeb2;
+            --blue: #0071e3;
+            --blue-bg: #e8f2ff;
+            --green: #34c759;
+            --green-bg: #eafbef;
+            --purple: #5856d6;
+            --purple-bg: #eeedff;
+            --pink: #ff2d55;
+            --pink-bg: #ffecf0;
+            --orange: #ff9500;
+            --teal: #5ac8fa;
+            --shadow-s: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+            --shadow-m: 0 4px 14px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+            --r: 16px;
+            --ease: cubic-bezier(.25, .1, .25, 1);
+            --dm-transition: background 0.35s cubic-bezier(.4,0,.2,1), color 0.35s cubic-bezier(.4,0,.2,1), border-color 0.35s cubic-bezier(.4,0,.2,1), box-shadow 0.35s cubic-bezier(.4,0,.2,1);
+        }
+
+        html.dark {
+            --white: #1c1c1e;
+            --bg: #000000;
+            --card: #1c1c1e;
+            --input-bg: #2c2c2e;
+            --border: #3a3a3c;
+            --border-light: #2c2c2e;
+            --t1: #f5f5f7;
+            --t2: #a1a1a6;
+            --t3: #8e8e93;
+            --t4: #636366;
+            --blue: #409cff;
+            --blue-bg: #0a1f3d;
+            --green: #30d158;
+            --green-bg: #0a2318;
+            --purple: #bf5af2;
+            --purple-bg: #1e0a2e;
+            --pink: #ff375f;
+            --pink-bg: #2e0a13;
+            --orange: #ff9f0a;
+            --teal: #64d2ff;
+            --shadow-s: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.4);
+            --shadow-m: 0 4px 14px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            background: var(--bg);
+            color: var(--t1);
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            -webkit-font-smoothing: antialiased;
+            transition: var(--dm-transition);
+        }
+
+        *, *::before, *::after {
+            transition: background 0.35s cubic-bezier(.4,0,.2,1),
+                        color 0.35s cubic-bezier(.4,0,.2,1),
+                        border-color 0.35s cubic-bezier(.4,0,.2,1),
+                        box-shadow 0.35s cubic-bezier(.4,0,.2,1);
+        }
+
+        /* ── DARK MODE TOGGLE ── */
+        .dm-btn {
+            position: fixed;
+            top: 100px;
+            right: 14px;
+            z-index: 1000;
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border-radius: 50%;
+            border: 1.5px solid var(--border-light);
+            background: var(--card);
+            box-shadow: var(--shadow-m);
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: box-shadow 0.2s var(--ease),
+                        background 0.35s cubic-bezier(.4,0,.2,1),
+                        border-color 0.35s cubic-bezier(.4,0,.2,1);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+        }
+
+        .dm-btn.dragging {
+            cursor: grabbing;
+            box-shadow: var(--shadow-m), 0 8px 24px rgba(0,0,0,0.15);
+            transform: scale(1.08);
+            transition: box-shadow 0.2s var(--ease),
+                        background 0.35s cubic-bezier(.4,0,.2,1),
+                        border-color 0.35s cubic-bezier(.4,0,.2,1);
+        }
+
+        .dm-btn:hover:not(.dragging) {
+            box-shadow: var(--shadow-m), 0 0 0 4px rgba(0,113,227,0.10);
+        }
+
+        .dm-logo {
+            width: 26px;
+            height: 26px;
+            border-radius: 7px;
+            object-fit: cover;
+            flex-shrink: 0;
+            transition: transform 0.5s cubic-bezier(.34,1.56,.64,1);
+        }
+
+        html.dark .dm-logo {
+            transform: rotate(360deg);
+        }
+
+        .dm-icon {
+            font-size: 15px;
+            line-height: 1;
+            transition: transform 0.4s cubic-bezier(.34,1.56,.64,1);
+        }
+
+        html.dark .dm-icon {
+            transform: rotate(20deg);
+        }
+
+        .wrap {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 0 20px 60px;
+        }
+
+        /* ── HEADER ── */
+        .hdr {
+            text-align: center;
+            padding: 40px 0 24px;
+        }
+
+        .hdr h1 {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            line-height: 1.15;
+            margin-bottom: 8px;
+        }
+
+        .hdr p {
+            font-size: 15px;
+            color: var(--t2);
+            font-weight: 400;
+            line-height: 1.4;
+        }
+
+        /* ── CARD ── */
+        .cd {
+            background: var(--card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--r);
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-s);
+        }
+
+        .cd-sub {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--t4);
+            margin-bottom: 4px;
+        }
+
+        .cd-title {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            margin-bottom: 16px;
+            line-height: 1.3;
+        }
+
+        /* ── INPUT GRID ── */
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        /* ── FORM ── */
+        .fg {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .fg4 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        @media (min-width: 768px) {
+            .fg4 {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .fi {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .fi label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--t3);
+            letter-spacing: 0.2px;
+        }
+
+        .fi input {
+            padding: 12px 14px;
+            background: var(--input-bg);
+            border: 1.5px solid transparent;
+            border-radius: 10px;
+            color: var(--t1);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            font-weight: 600;
+            outline: none;
+            transition: all .2s var(--ease);
+            width: 100%;
+            min-width: 0;
+            -webkit-appearance: none;
+        }
+
+        .fi input:focus {
+            background: var(--card);
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(0, 113, 227, .15);
+        }
+
+        /* ── DATASET PILLS ── */
+        .ds-pills-wrap {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .ds-pills {
+            display: flex;
+            background: var(--input-bg);
+            border-radius: 12px;
+            padding: 4px;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        .ds-pill {
+            padding: 12px 36px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 10px;
+            border: none;
+            background: transparent;
+            color: var(--t3);
+            font-family: inherit;
+            transition: all .2s var(--ease);
+        }
+
+        .ds-pill.on {
+            background: var(--card);
+            color: var(--t1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+        }
+
+        /* ── SENDER/SIGNER PILLS ── */
+        .pills {
+            display: flex;
+            background: var(--input-bg);
+            border-radius: 7px;
+            padding: 2px;
+        }
+
+        .pill {
+            padding: 5px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            border: none;
+            background: transparent;
+            color: var(--t3);
+            font-family: inherit;
+            transition: all .15s var(--ease);
+        }
+
+        .pill.on {
+            background: var(--card);
+            color: var(--t1);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, .06);
+        }
+
+        /* ── BUTTON ── */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 13px 22px;
+            border: none;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            background: var(--t1);
+            color: var(--white);
+            transition: all .15s var(--ease);
+            text-align: center;
+            user-select: none;
+            margin-top: 16px;
+        }
+
+        .btn:active {
+            transform: scale(.98);
+            opacity: .9;
+        }
+
+        /* ── RESULTS ── */
+        .res-container {
+            margin-top: 24px;
+        }
+
+        .rb {
+            background: var(--card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--r);
+            padding: 24px;
+            margin-bottom: 16px;
+            position: relative;
+            box-shadow: var(--shadow-s);
+            overflow: hidden;
+        }
+
+        .rb::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+        }
+
+        .rb.a-bl::after { background: var(--blue); }
+        .rb.a-gr::after { background: var(--green); }
+        .rb.a-pu::after { background: var(--purple); }
+        .rb.a-pk::after { background: var(--pink); }
+
+        .rb-h {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 8px;
+        }
+
+        .rb-h.c-bl { color: var(--blue); }
+        .rb-h.c-gr { color: var(--green); }
+        .rb-h.c-pu { color: var(--purple); }
+        .rb-h.c-pk { color: var(--pink); }
+
+        /* ── STEPS ── */
+        .s {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13.5px;
+            line-height: 2;
+            color: var(--t1);
+            word-break: break-word;
+            margin-bottom: 6px;
+        }
+
+        .si {
+            padding-left: 20px;
+        }
+
+        .sf {
+            color: var(--t2);
+        }
+
+        .sv {
+            color: var(--purple);
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+
+        .sr2 {
+            color: var(--green);
+            font-weight: 800;
+            font-size: 1.15em;
+        }
+
+        .sm {
+            color: var(--t3);
+            font-size: 12.5px;
+        }
+
+        /* ── ANSWER BOX ── */
+        .ab {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg);
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-top: 14px;
+        }
+
+        .ab-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .ab-dot.d-bl { background: var(--blue); }
+        .ab-dot.d-gr { background: var(--green); }
+        .ab-dot.d-pk { background: var(--pink); }
+        .ab-dot.d-pu { background: var(--purple); }
+
+        .ab-lbl {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--t3);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .ab-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--t1);
+            margin-top: 1px;
+        }
+
+        /* ── BADGE ── */
+        .bg {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 12px;
+        }
+
+        .bg-ok {
+            background: var(--green-bg);
+            color: var(--green);
+        }
+
+        .bg-no {
+            background: var(--pink-bg);
+            color: var(--pink);
+        }
+
+        .err {
+            font-size: 13px;
+            padding: 12px 14px;
+            background: var(--pink-bg);
+            color: var(--pink);
+            border-radius: 8px;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+
+        .dv {
+            border: none;
+            height: 1px;
+            background: var(--border-light);
+            margin: 16px 0;
+        }
+
+        /* ── FOOTER ── */
+        .ft {
+            text-align: center;
+            padding: 40px 20px 24px;
+            font-size: 12px;
+            color: var(--t4);
+            font-weight: 500;
+            border-top: 1px solid var(--border-light);
+            margin-top: 40px;
+        }
+
+        /* ── MOBILE RESPONSIVE ── */
+        @media (max-width: 768px) {
+            .wrap {
+                padding: 0 12px 40px;
+            }
+
+            .hdr {
+                padding: 28px 0 20px;
+            }
+
+            .hdr h1 {
+                font-size: 26px;
+                letter-spacing: -0.6px;
+            }
+
+            .hdr p {
+                font-size: 14px;
+            }
+
+            .input-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .cd {
+                padding: 20px 16px;
+                border-radius: 14px;
+            }
+
+            .btn {
+                padding: 14px 16px;
+                font-size: 15px;
+                border-radius: 10px;
+            }
+
+            .rb {
+                padding: 20px 16px;
+                border-radius: 14px;
+                margin-bottom: 16px;
+            }
+
+            .s {
+                font-size: 13.5px;
+                line-height: 1.9;
+            }
+
+            .si {
+                padding-left: 14px;
+            }
+
+            .ab {
+                padding: 12px 14px;
+            }
+
+            .ab-val {
+                font-size: 15px;
+            }
+
+            .ds-pill {
+                padding: 10px 24px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <button class="dm-btn" id="dm-toggle" aria-label="Chuyển dark/light mode">
+        <img src="favicon.png" class="dm-logo" alt="logo">
+    </button>
+    <div class="wrap">
+        <header class="hdr">
+            <h1>BẢO BỐI RSA & Diffie‑Hellman</h1>
+            <p>byHGH</p>
+        </header>
+
+        <div class="ds-pills-wrap">
+            <div class="ds-pills">
+                <button class="ds-pill on" id="ds-1" onclick="loadDataset(1)">Đề 1</button>
+                <button class="ds-pill" id="ds-2" onclick="loadDataset(2)">Đề 2</button>
+            </div>
+        </div>
+
+        <!-- INPUT AREA -->
+        <h2 style="font-size: 20px; font-weight: 800; margin: 24px 0 16px; color: var(--t1);">Câu 1: Hệ mật mã RSA</h2>
+        <div class="input-grid">
+            <!-- CARD 1: RSA KEYS -->
+            <div class="cd" style="margin-bottom: 0;">
+                <div class="cd-sub">Khóa RSA</div>
+                <div class="cd-title">Alice & Bob Parameters</div>
+                
+                <div style="font-size:12px; font-weight:600; color:var(--t2); margin-bottom:8px">Alice chọn:</div>
+                <div class="fg" style="margin-bottom: 16px;">
+                    <div class="fi"><label>p</label><input type="number" id="ap" value="11" oninput="solveProblem()"></div>
+                    <div class="fi"><label>q</label><input type="number" id="aq" value="23" oninput="solveProblem()"></div>
+                    <div class="fi"><label>e</label><input type="number" id="ae" value="3" oninput="solveProblem()"></div>
+                </div>
+                
+                <div style="font-size:12px; font-weight:600; color:var(--t2); margin-bottom:8px">Bob chọn:</div>
+                <div class="fg" style="margin-bottom: 0;">
+                    <div class="fi"><label>p</label><input type="number" id="bp" value="13" oninput="solveProblem()"></div>
+                    <div class="fi"><label>q</label><input type="number" id="bq" value="11" oninput="solveProblem()"></div>
+                    <div class="fi"><label>e</label><input type="number" id="be" value="11" oninput="solveProblem()"></div>
+                </div>
+            </div>
+
+            <!-- CARD 2: RSA MESSAGES -->
+            <div class="cd" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div class="cd-sub">Thông số RSA</div>
+                    <div class="cd-title">Mã hóa & Chữ ký</div>
+                    
+                    <!-- P -->
+                    <div style="margin-bottom: 16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px">
+                            <label style="font-size: 11px; font-weight: 600; color: var(--t3);">Bản rõ P</label>
+                            <div class="pills">
+                                <button class="pill on" id="pill-p-alice" onclick="setSender('alice')">Alice gửi</button>
+                                <button class="pill" id="pill-p-bob" onclick="setSender('bob')">Bob gửi</button>
+                            </div>
+                        </div>
+                        <input type="number" id="ep" value="5" oninput="solveProblem()" style="padding: 12px 14px; background: var(--input-bg); border: 1.5px solid transparent; border-radius: 10px; color: var(--t1); font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 600; outline: none; width: 100%; -webkit-appearance: none;">
+                    </div>
+
+                    <!-- H(M) -->
+                    <div style="margin-bottom: 16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px">
+                            <label style="font-size: 11px; font-weight: 600; color: var(--t3);">Giá trị H(M)</label>
+                            <div class="pills">
+                                <button class="pill on" id="pill-hm-alice" onclick="setSignerHM('alice')">Alice ký</button>
+                                <button class="pill" id="pill-hm-bob" onclick="setSignerHM('bob')">Bob ký</button>
+                            </div>
+                        </div>
+                        <input type="number" id="sh" value="11" oninput="solveProblem()" style="padding: 12px 14px; background: var(--input-bg); border: 1.5px solid transparent; border-radius: 10px; color: var(--t1); font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 600; outline: none; width: 100%; -webkit-appearance: none;">
+                    </div>
+
+                    <!-- M -->
+                    <div style="margin-bottom: 0;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px">
+                            <label style="font-size: 11px; font-weight: 600; color: var(--t3);">Bản rõ M</label>
+                            <div class="pills">
+                                <button class="pill on" id="pill-m-alice" onclick="setSignerM('alice')">Alice ký</button>
+                                <button class="pill" id="pill-m-bob" onclick="setSignerM('bob')">Bob ký</button>
+                            </div>
+                        </div>
+                        <input type="number" id="sm_input" value="15" oninput="solveProblem()" style="padding: 12px 14px; background: var(--input-bg); border: 1.5px solid transparent; border-radius: 10px; color: var(--t1); font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 600; outline: none; width: 100%; -webkit-appearance: none;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CARD 3: DIFFIE-HELLMAN -->
+        <h2 style="font-size: 20px; font-weight: 800; margin: 32px 0 16px; color: var(--t1);">Câu 2: Trao đổi khóa Diffie-Hellman</h2>
+        <div class="cd" style="margin-top: 0;">
+            <div class="cd-sub">Khóa phiên</div>
+            <div class="cd-title">Diffie‑Hellman Key Exchange</div>
+            <div class="fg fg4">
+                <div class="fi"><label>q (nguyên tố)</label><input type="number" id="dq" value="23" oninput="solveProblem()"></div>
+                <div class="fi"><label>α (cơ số)</label><input type="number" id="da" value="11" oninput="solveProblem()"></div>
+                <div class="fi"><label>X_A (Alice)</label><input type="number" id="dx" value="17" oninput="solveProblem()"></div>
+                <div class="fi"><label>X_B (Bob)</label><input type="number" id="dy" value="19" oninput="solveProblem()"></div>
+            </div>
+            <button class="btn" onclick="solveProblem()">Giải Toàn Bộ Đề Bài</button>
+        </div>
+
+        <!-- RESULTS CONTAINER -->
+        <div id="results-area" class="res-container"></div>
+    </div>
+
+    <footer class="ft">RSA & Diffie‑Hellman Calculator</footer>
+
+    <script>
+        // ── Dark Mode ──
+        (function() {
+            const saved = localStorage.getItem('dm');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (saved === 'dark' || (!saved && prefersDark)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+
+        function toggleDark() {
+            const html = document.documentElement;
+            html.classList.toggle('dark');
+            const isDark = html.classList.contains('dark');
+            localStorage.setItem('dm', isDark ? 'dark' : 'light');
+        }
+
+        // ── Draggable Button ──
+        function initDraggable() {
+            const btn = document.getElementById('dm-toggle');
+            let dragging = false;
+            let startX, startY, startLeft, startTop;
+            let moved = false;
+
+            function getPos() {
+                return {
+                    left: parseInt(btn.style.left) || (window.innerWidth - btn.offsetWidth - 14),
+                    top: parseInt(btn.style.top) || 100
+                };
+            }
+
+            function savePos(left, top) {
+                localStorage.setItem('dm-pos', JSON.stringify({ left, top }));
+            }
+
+            function loadPos() {
+                try {
+                    const p = JSON.parse(localStorage.getItem('dm-pos'));
+                    if (p) {
+                        btn.style.left = p.left + 'px';
+                        btn.style.top = p.top + 'px';
+                        btn.style.right = 'auto';
+                    }
+                } catch(e) {}
+            }
+
+            function clamp(left, top) {
+                const W = window.innerWidth, H = window.innerHeight;
+                const w = btn.offsetWidth, h = btn.offsetHeight;
+                return {
+                    left: Math.max(8, Math.min(left, W - w - 8)),
+                    top: Math.max(8, Math.min(top, H - h - 8))
+                };
+            }
+
+            // Mouse
+            btn.addEventListener('mousedown', e => {
+                e.preventDefault();
+                dragging = true; moved = false;
+                const pos = getPos();
+                startX = e.clientX; startY = e.clientY;
+                startLeft = pos.left; startTop = pos.top;
+                btn.classList.add('dragging');
+                btn.style.right = 'auto';
+            });
+
+            document.addEventListener('mousemove', e => {
+                if (!dragging) return;
+                const dx = e.clientX - startX, dy = e.clientY - startY;
+                if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+                const { left, top } = clamp(startLeft + dx, startTop + dy);
+                btn.style.left = left + 'px';
+                btn.style.top = top + 'px';
+            });
+
+            document.addEventListener('mouseup', e => {
+                if (!dragging) return;
+                dragging = false;
+                btn.classList.remove('dragging');
+                if (moved) {
+                    savePos(parseInt(btn.style.left), parseInt(btn.style.top));
+                } else {
+                    toggleDark();
+                }
+            });
+
+            // Touch
+            btn.addEventListener('touchstart', e => {
+                const t = e.touches[0];
+                dragging = true; moved = false;
+                const pos = getPos();
+                startX = t.clientX; startY = t.clientY;
+                startLeft = pos.left; startTop = pos.top;
+                btn.classList.add('dragging');
+                btn.style.right = 'auto';
+            }, { passive: true });
+
+            btn.addEventListener('touchmove', e => {
+                if (!dragging) return;
+                e.preventDefault();
+                const t = e.touches[0];
+                const dx = t.clientX - startX, dy = t.clientY - startY;
+                if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved = true;
+                const { left, top } = clamp(startLeft + dx, startTop + dy);
+                btn.style.left = left + 'px';
+                btn.style.top = top + 'px';
+            }, { passive: false });
+
+            btn.addEventListener('touchend', () => {
+                if (!dragging) return;
+                dragging = false;
+                btn.classList.remove('dragging');
+                if (moved) {
+                    savePos(parseInt(btn.style.left), parseInt(btn.style.top));
+                } else {
+                    toggleDark();
+                }
+            });
+
+            loadPos();
+        }
+
+        // Sync icon on load
+        window.addEventListener('DOMContentLoaded', () => {
+            initDraggable();
+            solveProblem();
+        });
+
+        // Global state for pills
+        let rsa_P_sender = 'alice';
+        let rsa_HM_signer = 'alice';
+        let rsa_M_signer = 'alice';
+
+        function loadDataset(n) {
+            document.getElementById('ds-1').classList.toggle('on', n === 1);
+            document.getElementById('ds-2').classList.toggle('on', n === 2);
+
+            if (n === 1) {
+                document.getElementById('ap').value = 11;
+                document.getElementById('aq').value = 23;
+                document.getElementById('ae').value = 3;
+                document.getElementById('bp').value = 13;
+                document.getElementById('bq').value = 11;
+                document.getElementById('be').value = 11;
+                document.getElementById('ep').value = 5;
+                document.getElementById('sh').value = 11;
+                document.getElementById('sm_input').value = 15;
+                document.getElementById('dq').value = 23;
+                document.getElementById('da').value = 11;
+                document.getElementById('dx').value = 17;
+                document.getElementById('dy').value = 19;
+                
+                rsa_P_sender = 'alice';
+                document.getElementById('pill-p-alice').classList.add('on');
+                document.getElementById('pill-p-bob').classList.remove('on');
+                
+                rsa_HM_signer = 'alice';
+                document.getElementById('pill-hm-alice').classList.add('on');
+                document.getElementById('pill-hm-bob').classList.remove('on');
+                
+                rsa_M_signer = 'alice';
+                document.getElementById('pill-m-alice').classList.add('on');
+                document.getElementById('pill-m-bob').classList.remove('on');
+            } else if (n === 2) {
+                document.getElementById('ap').value = 13;
+                document.getElementById('aq').value = 23;
+                document.getElementById('ae').value = 7;
+                document.getElementById('bp').value = 11;
+                document.getElementById('bq').value = 31;
+                document.getElementById('be').value = 7;
+                document.getElementById('ep').value = 5;
+                document.getElementById('sh').value = 11;
+                document.getElementById('sm_input').value = 13;
+                document.getElementById('dq').value = 29;
+                document.getElementById('da').value = 11;
+                document.getElementById('dx').value = 19;
+                document.getElementById('dy').value = 13;
+                
+                rsa_P_sender = 'alice';
+                document.getElementById('pill-p-alice').classList.add('on');
+                document.getElementById('pill-p-bob').classList.remove('on');
+                
+                rsa_HM_signer = 'alice';
+                document.getElementById('pill-hm-alice').classList.add('on');
+                document.getElementById('pill-hm-bob').classList.remove('on');
+                
+                rsa_M_signer = 'bob';
+                document.getElementById('pill-m-alice').classList.remove('on');
+                document.getElementById('pill-m-bob').classList.add('on');
+            }
+            solveProblem();
+        }
+
+        function setSender(val) {
+            rsa_P_sender = val;
+            document.getElementById('pill-p-alice').classList.toggle('on', val === 'alice');
+            document.getElementById('pill-p-bob').classList.toggle('on', val === 'bob');
+            solveProblem();
+        }
+
+        function setSignerHM(val) {
+            rsa_HM_signer = val;
+            document.getElementById('pill-hm-alice').classList.toggle('on', val === 'alice');
+            document.getElementById('pill-hm-bob').classList.toggle('on', val === 'bob');
+            solveProblem();
+        }
+
+        function setSignerM(val) {
+            rsa_M_signer = val;
+            document.getElementById('pill-m-alice').classList.toggle('on', val === 'alice');
+            document.getElementById('pill-m-bob').classList.toggle('on', val === 'bob');
+            solveProblem();
+        }
+
+        // Load initial calculations handled above
+
+        // ── Helper Math Functions (using BigInt to prevent overflow) ──
+        function mp(b, e, m) {
+            b = BigInt(b); e = BigInt(e); m = BigInt(m);
+            let r = 1n; b %= m;
+            while (e > 0n) {
+                if (e % 2n === 1n) r = (r * b) % m;
+                e /= 2n;
+                b = (b * b) % m;
+            }
+            return Number(r);
+        }
+
+        function egcd(a, b) {
+            if (!a) return { g: b, x: 0, y: 1 };
+            let r = egcd(b % a, a);
+            return { g: r.g, x: r.y - Math.floor(b / a) * r.x, y: r.x };
+        }
+
+        function mi(e, p) {
+            let r = egcd(e % p, p);
+            if (r.g !== 1) return null;
+            return ((r.x % p) + p) % p;
+        }
+
+        function gc(a, b) {
+            while (b) { [a, b] = [b, a % b]; }
+            return a;
+        }
+
+        function ip(n) {
+            if (n < 2) return false;
+            for (let i = 2; i * i <= n; i++) {
+                if (n % i === 0) return false;
+            }
+            return true;
+        }
+
+        // ── Successive Squaring Modulo Exponentiation Formatter ──
+        function generateModularSquaringHtml(base, exp, mod, skipHeader = false) {
+            let result = 1n;
+            let b = BigInt(base) % BigInt(mod);
+            let e = BigInt(exp);
+            let m = BigInt(mod);
+
+            if (e === 0n) {
+                let html0 = skipHeader ? `<div class="s si">= 1</div>` : `<div class="s">Ta có: ${base}<sup>0</sup> mod ${mod} = <span class="sv">1</span></div>`;
+                return {
+                    result: 1,
+                    html: html0
+                };
+            }
+
+            let powersOf2 = [];
+            let p = 1n;
+            while (p <= e) {
+                powersOf2.push(p);
+                p *= 2n;
+            }
+            powersOf2 = powersOf2.filter(x => x <= e);
+
+            let activePowers = [];
+            let temp = e;
+            for (let i = powersOf2.length - 1; i >= 0; i--) {
+                if (temp >= powersOf2[i]) {
+                    activePowers.push(powersOf2[i]);
+                    temp -= powersOf2[i];
+                }
+            }
+            activePowers.sort((x, y) => Number(y - x));
+
+            let html = '';
+            if (!skipHeader) {
+                html += `<div class="s">Ta có: ${base}<sup>${exp}</sup> mod ${mod}</div>`;
+            }
+            html += `<div class="s si">= (${activePowers.map(x => `${base}<sup>${x}</sup>`).join(' . ')}) mod ${mod}</div>`;
+
+            let powerVals = {};
+            let currentVal = b;
+            powerVals[1n] = currentVal;
+
+            html += `<div class="s">⊕ ${base}<sup>1</sup> mod ${mod} = <span class="sv">${currentVal}</span></div>`;
+
+            for (let i = 1; i < powersOf2.length; i++) {
+                let prevPower = powersOf2[i-1];
+                let currPower = powersOf2[i];
+                let prevVal = powerVals[prevPower];
+                let sqVal = (prevVal * prevVal) % m;
+                powerVals[currPower] = sqVal;
+                
+                let prevValStr = prevVal.toString();
+                let product = prevVal * prevVal;
+                if (product >= m) {
+                    html += `<div class="s">⊕ ${base}<sup>${currPower}</sup> mod ${mod} = (${prevValStr} . ${prevValStr}) mod ${mod} = ${product} mod ${mod} = <span class="sv">${sqVal}</span></div>`;
+                } else {
+                    html += `<div class="s">⊕ ${base}<sup>${currPower}</sup> mod ${mod} = (${prevValStr} . ${prevValStr}) mod ${mod} = <span class="sv">${sqVal}</span></div>`;
+                }
+            }
+
+            let factors = activePowers.map(x => powerVals[x]);
+            let finalResult = 1n;
+            for (let f of factors) {
+                finalResult = (finalResult * f) % m;
+            }
+
+            let factorsStr = factors.map(x => x.toString()).join(' . ');
+            html += `<div class="s">=> ${base}<sup>${exp}</sup> mod ${mod} = (${factorsStr}) mod ${mod}</div>`;
+
+            if (factors.length > 1) {
+                let currentMul = factors[0];
+                for (let i = 1; i < factors.length; i++) {
+                    let nextVal = factors[i];
+                    let product = currentMul * nextVal;
+                    let nextMul = product % m;
+                    if (product >= m) {
+                        html += `<div class="s si sm">→ (${currentMul} . ${nextVal}) mod ${mod} = ${product} mod ${mod} = ${nextMul}</div>`;
+                    } else {
+                        html += `<div class="s si sm">→ (${currentMul} . ${nextVal}) mod ${mod} = ${nextMul}</div>`;
+                    }
+                    currentMul = nextMul;
+                }
+            }
+            
+            html += `<div class="s">=> Kết quả = <span class="sr2"><b>${finalResult}</b></span></div>`;
+
+            return {
+                result: Number(finalResult),
+                html: html
+            };
+        }
+
+        // ── Core Solver and Renderer ──
+        function solveProblem() {
+            let resultsArea = document.getElementById('results-area');
+            resultsArea.innerHTML = '';
+
+            // Read Inputs
+            let alice_p = +document.getElementById('ap').value;
+            let alice_q = +document.getElementById('aq').value;
+            let alice_e = +document.getElementById('ae').value;
+            
+            let bob_p = +document.getElementById('bp').value;
+            let bob_q = +document.getElementById('bq').value;
+            let bob_e = +document.getElementById('be').value;
+
+            let rsa_P = +document.getElementById('ep').value;
+            let rsa_HM = +document.getElementById('sh').value;
+            let rsa_M = +document.getElementById('sm_input').value;
+
+            let dh_q = +document.getElementById('dq').value;
+            let dh_alpha = +document.getElementById('da').value;
+            let dh_XA = +document.getElementById('dx').value;
+            let dh_XB = +document.getElementById('dy').value;
+
+            // Derived roles
+            let rsa_P_receiver = rsa_P_sender === 'alice' ? 'bob' : 'alice';
+            let rsa_HM_verifier = rsa_HM_signer === 'alice' ? 'bob' : 'alice';
+            let rsa_M_verifier = rsa_M_signer === 'alice' ? 'bob' : 'alice';
+
+            // Validate and compute RSA Keys
+            let kAlice = null;
+            let kBob = null;
+
+            if (alice_p && alice_q && alice_e) {
+                if (!ip(alice_p)) {
+                    resultsArea.innerHTML += `<div class="err">Lỗi: Tham số p của Alice (${alice_p}) không phải là số nguyên tố!</div>`;
+                    return;
+                }
+                if (!ip(alice_q)) {
+                    resultsArea.innerHTML += `<div class="err">Lỗi: Tham số q của Alice (${alice_q}) không phải là số nguyên tố!</div>`;
+                    return;
+                }
+                let n = alice_p * alice_q;
+                let phi = (alice_p - 1) * (alice_q - 1);
+                let d = mi(alice_e, phi);
+                kAlice = { p: alice_p, q: alice_q, e: alice_e, n, phi, d };
+                if (gc(alice_e, phi) !== 1) kAlice.error = `gcd(e, φ(n)) = gcd(${alice_e}, ${phi}) ≠ 1 (Không tồn tại nghịch đảo d)`;
+            } else {
+                resultsArea.innerHTML += `<div class="err">Lỗi: Thiếu tham số p, q, e của Alice</div>`;
+                return;
+            }
+
+            if (bob_p && bob_q && bob_e) {
+                if (!ip(bob_p)) {
+                    resultsArea.innerHTML += `<div class="err">Lỗi: Tham số p của Bob (${bob_p}) không phải là số nguyên tố!</div>`;
+                    return;
+                }
+                if (!ip(bob_q)) {
+                    resultsArea.innerHTML += `<div class="err">Lỗi: Tham số q của Bob (${bob_q}) không phải là số nguyên tố!</div>`;
+                    return;
+                }
+                let n = bob_p * bob_q;
+                let phi = (bob_p - 1) * (bob_q - 1);
+                let d = mi(bob_e, phi);
+                kBob = { p: bob_p, q: bob_q, e: bob_e, n, phi, d };
+                if (gc(bob_e, phi) !== 1) kBob.error = `gcd(e, φ(n)) = gcd(${bob_e}, ${phi}) ≠ 1 (Không tồn tại nghịch đảo d)`;
+            } else {
+                resultsArea.innerHTML += `<div class="err">Lỗi: Thiếu tham số p, q, e của Bob</div>`;
+                return;
+            }
+
+            // Render Part A
+            resultsArea.innerHTML += `<h2 style="font-size: 20px; font-weight: 800; margin: 0 0 16px; color: var(--t1); padding-bottom: 8px; border-bottom: 2px solid var(--border-light);">Lời Giải Câu 1</h2>`;
+            resultsArea.innerHTML += renderPartA(kAlice);
+
+            // Render Part B
+            resultsArea.innerHTML += renderPartB(kBob);
+
+            // Render Part C (Mã hóa & Giải mã)
+            if (!kAlice.error && !kBob.error) {
+                resultsArea.innerHTML += renderPartC(rsa_P, rsa_P_sender, rsa_P_receiver, kAlice, kBob);
+            } else {
+                resultsArea.innerHTML += `<div class="err">Không thể thực hiện Phần C vì có lỗi khóa RSA</div>`;
+            }
+
+            // Render Part D (Ký H(M))
+            if (!kAlice.error && !kBob.error) {
+                resultsArea.innerHTML += renderPartD(rsa_HM, rsa_HM_signer, rsa_HM_verifier, kAlice, kBob);
+            } else {
+                resultsArea.innerHTML += `<div class="err">Không thể thực hiện Phần D vì có lỗi khóa RSA</div>`;
+            }
+
+            // Render Part E (Ký M)
+            if (!kAlice.error && !kBob.error) {
+                resultsArea.innerHTML += renderPartE(rsa_M, rsa_M_signer, rsa_M_verifier, kAlice, kBob);
+            } else {
+                resultsArea.innerHTML += `<div class="err">Không thể thực hiện Phần E vì có lỗi khóa RSA</div>`;
+            }
+
+            // Render Câu 2 (Diffie-Hellman)
+            if (!ip(dh_q)) {
+                resultsArea.innerHTML += `<div class="err">Lỗi: Tham số q trong Diffie-Hellman (${dh_q}) không phải là số nguyên tố!</div>`;
+                return;
+            }
+            resultsArea.innerHTML += `<h2 style="font-size: 20px; font-weight: 800; margin: 32px 0 16px; color: var(--t1); padding-bottom: 8px; border-bottom: 2px solid var(--border-light);">Lời Giải Câu 2</h2>`;
+            resultsArea.innerHTML += renderDH(dh_q, dh_alpha, dh_XA, dh_XB);
+        }
+
+        // ── Render Part A — Alice's Keys ──
+        function renderPartA(k) {
+            if (k.error) {
+                return `<div class="rb a-pu"><div class="rb-h c-pu">Phần A — Tính khoá Alice</div><div class="err">${k.error}</div></div>`;
+            }
+            let isPrimeWarning = (!ip(k.p) || !ip(k.q)) ? `<div class="bg bg-no" style="margin-top:8px">Cảnh báo: p hoặc q không phải số nguyên tố!</div>` : '';
+            return `
+            <div class="rb a-pu">
+                <div class="rb-h c-pu">Phần A — Tính khoá Alice</div>
+                <div class="s">a) Tính khóa công khai KU<sub>A</sub> và khóa riêng KR<sub>A</sub> của Alice:</div>
+                <div class="s si">⊛ Tính n = p . q = ${k.p} . ${k.q} = <span class="sv">${k.n}</span></div>
+                <div class="s">⊛ Tính φ(n) = (p - 1) . (q - 1) = (${k.p} - 1) . (${k.q} - 1) = ${k.p - 1} . ${k.q - 1} = <span class="sv">${k.phi}</span></div>
+                <div class="s">⊛ Tính khóa giải mã d:</div>
+                <div class="s si">Ta có e . d mod φ(n) = 1</div>
+                <div class="s si">=> ${k.e} . d mod ${k.phi} = 1</div>
+                <div class="s si">Tính nhẩm ta được d = <span class="sv">${k.d}</span></div>
+                <div class="s si sm">vì ${k.e} . ${k.d} mod ${k.phi} = ${k.e * k.d} mod ${k.phi} = 1</div>
+                <div class="s">⊛ Vậy khóa công khai KU<sub>A</sub> = {${k.e}, ${k.n}}</div>
+                <div class="s">⊛ Vậy khóa riêng KR<sub>A</sub> = {${k.d}, ${k.n}}</div>
+                ${isPrimeWarning}
+            </div>
+            `;
+        }
+
+        // ── Render Part B — Bob's Keys ──
+        function renderPartB(k) {
+            if (k.error) {
+                return `<div class="rb a-pu"><div class="rb-h c-pu">Phần B — Tính khoá Bob</div><div class="err">${k.error}</div></div>`;
+            }
+            let isPrimeWarning = (!ip(k.p) || !ip(k.q)) ? `<div class="bg bg-no" style="margin-top:8px">Cảnh báo: p hoặc q không phải số nguyên tố!</div>` : '';
+            return `
+            <div class="rb a-pu">
+                <div class="rb-h c-pu">Phần B — Tính khoá Bob</div>
+                <div class="s">b) Tính khóa công khai KU<sub>B</sub> và khóa riêng KR<sub>B</sub> của Bob:</div>
+                <div class="s si">⊛ Tính n = p . q = ${k.p} . ${k.q} = <span class="sv">${k.n}</span></div>
+                <div class="s">⊛ Tính φ(n) = (p - 1) . (q - 1) = (${k.p} - 1) . (${k.q} - 1) = ${k.p - 1} . ${k.q - 1} = <span class="sv">${k.phi}</span></div>
+                <div class="s">⊛ Tính khóa giải mã d:</div>
+                <div class="s si">Ta có e . d mod φ(n) = 1</div>
+                <div class="s si">=> ${k.e} . d mod ${k.phi} = 1</div>
+                <div class="s si">Tính nhẩm ta được d = <span class="sv">${k.d}</span></div>
+                <div class="s si sm">vì ${k.e} . ${k.d} mod ${k.phi} = ${k.e * k.d} mod ${k.phi} = 1</div>
+                <div class="s">⊛ Vậy khóa công khai KU<sub>B</sub> = {${k.e}, ${k.n}}</div>
+                <div class="s">⊛ Vậy khóa riêng KR<sub>B</sub> = {${k.d}, ${k.n}}</div>
+                ${isPrimeWarning}
+            </div>
+            `;
+        }
+
+        // ── Render Part C — Encrypt & Decrypt ──
+        function renderPartC(p, sender, receiver, kAlice, kBob) {
+            let encKey = receiver === 'bob' ? kBob : kAlice;
+            let suffix = receiver === 'bob' ? 'B' : 'A';
+            
+            let enc = generateModularSquaringHtml(p, encKey.e, encKey.n, true);
+            let C = enc.result;
+            
+            let dec = generateModularSquaringHtml(C, encKey.d, encKey.n, true);
+            let P_dec = dec.result;
+            
+            let senderName = sender.charAt(0).toUpperCase() + sender.slice(1);
+            let receiverName = receiver.charAt(0).toUpperCase() + receiver.slice(1);
+
+            return `
+            <div class="rb a-bl">
+                <div class="rb-h c-bl">Phần C — Mã hoá & Giải mã</div>
+                <div class="s">c) ${senderName} mã hóa bản rõ P để gửi cho ${receiverName} và ${receiverName} giải mã C nhận được:</div>
+                <div class="s si" style="margin-top: 8px; margin-bottom:8px">⊛ Mã hoá</div>
+                <div class="s si">Ta có bản rõ P = ${p}</div>
+                <div class="s si">Bản mã C = P<sup>e<sub>${suffix}</sub></sup> mod n<sub>${suffix}</sub></div>
+                <div class="s si" style="padding-left:88px;">= ${p}<sup>${encKey.e}</sup> mod ${encKey.n}</div>
+                <div class="si" style="padding-left:68px;">${enc.html}</div>
+                <div class="s" style="margin-top:8px;">⊛ Vậy ${senderName} gửi bản mã C = ${C} cho ${receiverName}</div>
+                
+                <hr class="dv">
+                
+                <div class="s" style="margin-bottom:8px">⊛ Giải mã</div>
+                <div class="s si">${receiverName} nhận được bản mã C = ${C}</div>
+                <div class="s si">Bản rõ P = C<sup>d<sub>${suffix}</sub></sup> mod n<sub>${suffix}</sub></div>
+                <div class="s si" style="padding-left:80px;">= ${C}<sup>${encKey.d}</sup> mod ${encKey.n}</div>
+                <div class="si" style="padding-left:60px;">${dec.html}</div>
+                <div class="s" style="margin-top:8px;">⊛ Vậy ${receiverName} giải mã thu được bản rõ P = ${P_dec}</div>
+                ${P_dec === p ? '<span class="bg bg-ok">Giải mã chính xác</span>' : '<span class="bg bg-no">Lỗi giải mã</span>'}
+            </div>
+            `;
+        }
+
+        // ── Render Part D — Sign H(M) ──
+        function renderPartD(hm, signer, verifier, kAlice, kBob) {
+            let signKey = signer === 'alice' ? kAlice : kBob;
+            let suffix = signer === 'alice' ? 'A' : 'B';
+            
+            let sg = generateModularSquaringHtml(hm, signKey.d, signKey.n, true);
+            let S = sg.result;
+            
+            let vf = generateModularSquaringHtml(S, signKey.e, signKey.n, true);
+            let HM_ver = vf.result;
+            
+            let signerName = signer.charAt(0).toUpperCase() + signer.slice(1);
+            let verifierName = verifier.charAt(0).toUpperCase() + verifier.slice(1);
+            let success = HM_ver === hm;
+
+            return `
+            <div class="rb a-pk">
+                <div class="rb-h c-pk">Phần D — Ký số vào H(M)</div>
+                <div class="s">d) ${signerName} tạo chữ ký bằng khóa riêng của mình.</div>
+                <div class="s si">S = H(M)<sup>d<sub>${suffix}</sub></sup> mod n</div>
+                <div class="s si" style="padding-left:34px;">= ${hm}<sup>${signKey.d}</sup> mod ${signKey.n}</div>
+                <div class="si" style="padding-left:14px;">${sg.html}</div>
+                
+                <div class="s" style="margin-top:12px;">Ta có</div>
+                <div class="s si">H(M) = S<sup>e<sub>${suffix}</sub></sup> mod n</div>
+                <div class="s si" style="padding-left:46px;">= ${S}<sup>${signKey.e}</sup> mod ${signKey.n}</div>
+                <div class="si" style="padding-left:26px;">${vf.html}</div>
+                
+                <div class="s" style="margin-top:12px;">⊛ Vậy ${verifierName} nhận được chữ ký S là của ${signerName}.</div>
+                ${!success ? '<span class="bg bg-no">Chữ ký không hợp lệ</span>' : ''}
+            </div>
+            `;
+        }
+
+        // ── Render Part E — Sign M ──
+        function renderPartE(m, signer, verifier, kAlice, kBob) {
+            let signKey = signer === 'alice' ? kAlice : kBob;
+            let suffix = signer === 'alice' ? 'A' : 'B';
+            
+            let sg = generateModularSquaringHtml(m, signKey.d, signKey.n, true);
+            let S = sg.result;
+            
+            let vf = generateModularSquaringHtml(S, signKey.e, signKey.n, true);
+            let M_ver = vf.result;
+            
+            let signerName = signer.charAt(0).toUpperCase() + signer.slice(1);
+            let verifierName = verifier.charAt(0).toUpperCase() + verifier.slice(1);
+            let success = M_ver === m;
+
+            return `
+            <div class="rb a-gr">
+                <div class="rb-h c-gr">Phần E — Ký số vào bản rõ M</div>
+                <div class="s">e) ${signerName} tạo chữ ký bằng khóa riêng của mình.</div>
+                <div class="s si">S = M<sup>d<sub>${suffix}</sub></sup> mod n</div>
+                <div class="s si" style="padding-left:34px;">= ${m}<sup>${signKey.d}</sup> mod ${signKey.n}</div>
+                <div class="si" style="padding-left:14px;">${sg.html}</div>
+                
+                <div class="s" style="margin-top:12px;">Ta có</div>
+                <div class="s si">M = S<sup>e<sub>${suffix}</sub></sup> mod n</div>
+                <div class="s si" style="padding-left:28px;">= ${S}<sup>${signKey.e}</sup> mod ${signKey.n}</div>
+                <div class="si" style="padding-left:8px;">${vf.html}</div>
+                
+                <div class="s" style="margin-top:12px;">⊛ Vậy chữ ký ${verifierName} nhận được là của ${signerName}.</div>
+                ${!success ? '<span class="bg bg-no">Chữ ký không hợp lệ</span>' : ''}
+            </div>
+            `;
+        }
+
+        // ── Render Câu 2 — Diffie-Hellman Key Exchange ──
+        function renderDH(q, alpha, xa, xb) {
+            let ya = generateModularSquaringHtml(alpha, xa, q);
+            let YA = ya.result;
+            
+            let yb = generateModularSquaringHtml(alpha, xb, q);
+            let YB = yb.result;
+            
+            let ka = generateModularSquaringHtml(YB, xa, q);
+            let KA = ka.result;
+            
+            let kb = generateModularSquaringHtml(YA, xb, q);
+            let KB = kb.result;
+
+            let success = KA === KB;
+
+            return `
+            <div class="rb a-bl">
+                <div class="rb-h c-bl">Diffie-Hellman Key Exchange</div>
+                <div class="s" style="margin-bottom:8px">⊛ Tính khóa công khai của Alice:</div>
+                <div class="s si">Ta có Y<sub>A</sub> = α<sup>X<sub>A</sub></sup> mod q = ${alpha}<sup>${xa}</sup> mod ${q}</div>
+                <div class="si">${ya.html}</div>
+                <div class="s">⊛ Vậy Y<sub>A</sub> = <span class="sv">${YA}</span></div>
+                
+                <hr class="dv">
+                
+                <div class="s" style="margin-bottom:8px">⊛ Tính khóa công khai của Bob:</div>
+                <div class="s si">Ta có Y<sub>B</sub> = α<sup>X<sub>B</sub></sup> mod q = ${alpha}<sup>${xb}</sup> mod ${q}</div>
+                <div class="si">${yb.html}</div>
+                <div class="s">⊛ Vậy Y<sub>B</sub> = <span class="sv">${YB}</span></div>
+                
+                <hr class="dv">
+                
+                <div class="s" style="margin-bottom:8px">⊛ Alice tính khóa bí mật chung K:</div>
+                <div class="s si">Ta có K = Y<sub>B</sub><sup>X<sub>A</sub></sup> mod q = ${YB}<sup>${xa}</sup> mod ${q}</div>
+                <div class="si">${ka.html}</div>
+                <div class="s">⊛ Vậy K = <span class="sv">${KA}</span></div>
+                
+                <hr class="dv">
+                
+                <div class="s" style="margin-bottom:8px">⊛ Bob tính khóa bí mật chung K:</div>
+                <div class="s si">Ta có K = Y<sub>A</sub><sup>X<sub>B</sub></sup> mod q = ${YA}<sup>${xb}</sup> mod ${q}</div>
+                <div class="si">${kb.html}</div>
+                <div class="s">⊛ Vậy K = <span class="sv">${KB}</span></div>
+                
+                <hr class="dv">
+                
+                <div class="s">⊛ Vậy K = ${KA} là khóa bí mật chung của Alice và Bob.</div>
+                ${success ? '<span class="bg bg-ok">Trao đổi khóa thành công</span>' : '<span class="bg bg-no">Lỗi trao đổi khóa</span>'}
+            </div>
+            `;
+        }
+    </script>
+</body>
+
+</html>
